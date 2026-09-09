@@ -18,31 +18,37 @@ export class TrackingService {
   }
 
   getRealtimeStream(orderId: number): Observable<LocationData> {
-    return new Observable<LocationData>((observer) => {
-      const eventSource = new EventSource(`${this.API_URL}/stream/${orderId}`); //eventSource é o responsavel por abrir a conexão com o servidor e receber os eventos em tempo real
+  return new Observable<LocationData>((observer) => {
+    const streamUrl = `${this.API_URL}/stream/${orderId}`;
+    console.log('--> Tentando abrir conexão SSE na URL:', streamUrl);
 
-      eventSource.addEventListener('location-update', (event: MessageEvent) => { //location-update é o nome do evento que está registrado no backend, e o event é o objeto que contém os dados do evento
-        this.ngZone.run(() => { //o ngZone é usado para garantir que o Angular detecte as mudanças de estado e atualize a view corretamente, mesmo quando os eventos são recebidos fora do contexto do Angular
-          try {
-            const data: LocationData = JSON.parse(event.data); //parseando para a interface LocationData
-            observer.next(data);  //mudança em tempo real, o observer.next é chamado para enviar os dados para os assinantes do Observable
-          } catch (error) {
-            observer.error(error);  
-          }
-        });
+    const eventSource = new EventSource(streamUrl);
+
+    eventSource.onopen = () => {
+      console.log('--> Conexão SSE estabelecida com SUCESSO!');
+    };
+
+    eventSource.addEventListener('location-update', (event: MessageEvent) => {
+      this.ngZone.run(() => {
+        console.log('--> Evento location-update recebido:', event.data);
+        const data: LocationData = JSON.parse(event.data);
+        observer.next(data);
       });
-
-      eventSource.onerror = (error) => {
-        this.ngZone.run(() => {
-          observer.error(error);
-        });
-      };
-
-      return () => {
-        eventSource.close(); //fechando a conexão com o servidor quando o Observable é cancelado (usuario muda de pagina por exemplo)
-      };
     });
-  }
+
+    eventSource.onerror = (error) => {
+      this.ngZone.run(() => {
+        console.error('--> Erro ou fechamento na conexão SSE:', error);
+        observer.error(error);
+      });
+    };
+
+    return () => {
+      console.log('--> Fechando conexão SSE (unsubscribe)');
+      eventSource.close();
+    };
+  });
+}
 
 
 
