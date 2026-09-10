@@ -3,74 +3,64 @@ import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { TrackingService } from '../../core/services/tracking';
 import { LocationData } from '../../core/models/location-data';
-import { MapView } from './components/map-view/map-view';
+import { MapViewComponent } from './components/map-view/map-view';
 import { CommonModule } from '@angular/common';
 import { Order } from '../../core/models/order';
 import { OrderService } from '../../core/services/order';
 
-
 @Component({
-  imports: [MapView, CommonModule],
+  imports: [MapViewComponent, CommonModule],
   selector: 'app-tracking',
   styleUrl: './tracking.css',
   templateUrl: './tracking.html',
 })
 export class TrackingComponent implements OnInit, OnDestroy {
+ orderId = 1;
+  currentLocation: LocationData | null = null;
+  isConnected = false;
 
-orderId!: number;
-order: Order | null = null;
-currentLocation: LocationData | null = null
-isConnected: boolean = false;
+  private streamSub?: Subscription;
 
-private streamSub?: Subscription | null = null;
+  constructor(
+    private route: ActivatedRoute,
+    private trackingService: TrackingService
+  ) {}
 
-constructor(private route: ActivatedRoute, private trackingService: TrackingService, private orderService: OrderService) {}
+  ngOnInit(): void {
+    console.log('1. [Component] OnInit iniciado diretamente');
 
-ngOnInit(): void {
-    const idParam = this.route.snapshot.paramMap.get('id');
-    this.orderId = idParam ? Number(idParam) : 1;
+    // Tenta pegar o ID da rota (ex: /tracking/1) ou assume 1 por padrão
+    const idFromRoute = this.route.snapshot.paramMap.get('id');
+    if (idFromRoute) {
+      this.orderId = Number(idFromRoute);
+    }
 
-    this.loadOrderData();
-    this.loadInitialLocation();
+    console.log('2. [Component] Invocando conexão SSE para o pedido:', this.orderId);
+    
+    // Inscrição direta e imediata
     this.connectToRealtimeStream();
   }
 
   ngOnDestroy(): void {
-    // Fecha a conexão SSE limpando a inscrição do Observable
     if (this.streamSub) {
+      console.log('--> [Component] Limpando inscrição ao destruir componente');
       this.streamSub.unsubscribe();
     }
   }
 
-  private loadOrderData(): void {
-    this.orderService.getOrderById(this.orderId).subscribe({
-      next: (order) => (this.order = order),
-      error: (err) => console.error('Erro ao buscar pedido:', err)
-    });
-  }
-
-  private loadInitialLocation(): void {
-    this.trackingService.getCurrentLocation(this.orderId).subscribe({
-      next: (location) => {
-        if (location) {
-          this.currentLocation = location;
-        }
-      },
-      error: (err) => console.error('Erro ao buscar posição inicial:', err)
-    });
-  }
-
   private connectToRealtimeStream(): void {
+    console.log('3. [Component] Chamando getRealtimeStream() no serviço...');
+
     this.streamSub = this.trackingService.getRealtimeStream(this.orderId).subscribe({
       next: (location) => {
-        this.currentLocation = location;
+        console.log('--> [Component] DADO RECEBIDO VIA SSE:', location);
+        this.currentLocation = { ...location };
         this.isConnected = true;
       },
       error: (err) => {
-        console.error('Falha na stream SSE:', err);
+        console.error('--> [Component] Erro na stream do SSE:', err);
         this.isConnected = false;
       }
     });
   }
-
 }

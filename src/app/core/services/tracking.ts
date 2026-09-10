@@ -17,20 +17,20 @@ export class TrackingService {
     return this.http.get<LocationData>(`${this.API_URL}/${orderId}/current`);
   }
 
-  getRealtimeStream(orderId: number): Observable<LocationData> {
+ getRealtimeStream(orderId: number): Observable<LocationData> {
   return new Observable<LocationData>((observer) => {
     const streamUrl = `${this.API_URL}/stream/${orderId}`;
-    console.log('--> Tentando abrir conexão SSE na URL:', streamUrl);
+    console.log('--> [Angular] Conectando no SSE:', streamUrl);
 
     const eventSource = new EventSource(streamUrl);
 
-    eventSource.onopen = () => {
-      console.log('--> Conexão SSE estabelecida com SUCESSO!');
-    };
+    eventSource.addEventListener('INIT', (event: MessageEvent) => {
+      console.log('--> [Angular] Handshake SSE confirmado:', event.data);
+    });
 
     eventSource.addEventListener('location-update', (event: MessageEvent) => {
       this.ngZone.run(() => {
-        console.log('--> Evento location-update recebido:', event.data);
+        console.log('--> [Angular] Coordenada recebida:', event.data);
         const data: LocationData = JSON.parse(event.data);
         observer.next(data);
       });
@@ -38,13 +38,13 @@ export class TrackingService {
 
     eventSource.onerror = (error) => {
       this.ngZone.run(() => {
-        console.error('--> Erro ou fechamento na conexão SSE:', error);
-        observer.error(error);
+        console.error('--> [Angular] Erro/Queda na conexão SSE:', error);
+        // O navegador tenta reconectar sozinho em alguns segundos se o EventSource continuar aberto
       });
     };
 
     return () => {
-      console.log('--> Fechando conexão SSE (unsubscribe)');
+      console.log('--> [Angular] Fechando SSE');
       eventSource.close();
     };
   });
