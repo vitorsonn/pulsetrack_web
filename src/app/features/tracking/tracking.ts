@@ -1,12 +1,11 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { TrackingService } from '../../core/services/tracking';
 import { LocationData } from '../../core/models/location-data';
 import { MapViewComponent } from './components/map-view/map-view';
 import { CommonModule } from '@angular/common';
-import { Order } from '../../core/models/order';
-import { OrderService } from '../../core/services/order';
+
 
 @Component({
   imports: [MapViewComponent, CommonModule],
@@ -15,46 +14,54 @@ import { OrderService } from '../../core/services/order';
   templateUrl: './tracking.html',
 })
 export class TrackingComponent implements OnInit, OnDestroy {
- orderId = 1;
   currentLocation: LocationData | null = null;
   isConnected = false;
+  orderId!: number;
 
   private streamSub?: Subscription;
+  private initialLocationSub?: Subscription;
+  private latestLocationTimestamp?: number;
 
   constructor(
     private route: ActivatedRoute,
-    private trackingService: TrackingService
+    private trackingService: TrackingService,
+    private changeDetectorRef: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    console.log('1. [Component] OnInit iniciado diretamente');
+    this.route.paramMap.subscribe((params) => {
+      const idParam = params.get('id');
+      this.orderId = idParam ? Number(idParam) : 1;
 
-    // Tenta pegar o ID da rota (ex: /tracking/1) ou assume 1 por padrão
-    const idFromRoute = this.route.snapshot.paramMap.get('id');
-    if (idFromRoute) {
-      this.orderId = Number(idFromRoute);
-    }
+      console.log('--> [Component] Carregando rastreamento do pedido:', this.orderId);
 
-    console.log('2. [Component] Invocando conexão SSE para o pedido:', this.orderId);
-    
-    // Inscrição direta e imediata
-    this.connectToRealtimeStream();
+      this.streamSub?.unsubscribe();
+      this.initialLocationSub?.unsubscribe();
+
+
+      this.currentLocation = null;
+      this.isConnected = false;
+      this.latestLocationTimestamp = undefined;
+      this.changeDetectorRef.markForCheck();
+
+      this.loadInitialLocation(this.orderId);
+      this.connectToRealtimeStream(this.orderId);
+    });
   }
 
   ngOnDestroy(): void {
-    if (this.streamSub) {
-      console.log('--> [Component] Limpando inscrição ao destruir componente');
-      this.streamSub.unsubscribe();
-    }
+    console.log('--> [Component] Limpando inscrições ao destruir componente');
+    this.streamSub?.unsubscribe();
+    this.initialLocationSub?.unsubscribe();
   }
 
-  private connectToRealtimeStream(): void {
+  private connectToRealtimeStream(orderId: number): void {
     console.log('3. [Component] Chamando getRealtimeStream() no serviço...');
 
-    this.streamSub = this.trackingService.getRealtimeStream(this.orderId).subscribe({
+    this.streamSub = this.trackingService.getRealtimeStream(orderId).subscribe({
       next: (location) => {
         console.log('--> [Component] DADO RECEBIDO VIA SSE:', location);
-        this.currentLocation = { ...location };
+        this.applyLocation(location);
         this.isConnected = true;
       },
       error: (err) => {
@@ -62,5 +69,34 @@ export class TrackingComponent implements OnInit, OnDestroy {
         this.isConnected = false;
       }
     });
+  }
+
+  private loadInitialLocation(orderId: number): void {
+    this.initialLocationSub = this.trackingService.getCurrentLocation(orderId).subscribe({
+      next: (location) => {
+        if (location) {
+          console.log('--> [Component] Foto inicial do Redis:', location);
+          this.applyLocation(location);
+        }
+      },
+      error: (err) => console.error('--> [Component] Erro ao buscar posição inicial:', err)
+    });
+  }
+
+  private applyLocation(location: LocationData): void {
+    if (location.orderId !== this.orderId) {
+      return;
+    }
+
+
+    if (
+      this.latestLocationTimestamp !== undefined &&
+      location.timestamp < this.latestLocationTimestamp
+    ) {
+      return;
+    }
+    this.latestLocationTimestamp = location.timestamp;
+    this.currentLocation = { ...location };
+    this.changeDetectorRef.markForCheck();
   }
 }

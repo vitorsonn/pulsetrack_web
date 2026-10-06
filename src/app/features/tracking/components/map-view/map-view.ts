@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Input, OnChanges, OnDestroy, SimpleChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LocationData } from '../../../../core/models/location-data';
 import * as L from 'leaflet';
@@ -20,11 +20,11 @@ const defaultIcon = L.icon({
   imports: [CommonModule],
   template: `<div #mapContainer class="w-full h-[450px] rounded-2xl shadow-inner border border-slate-700"></div>`
 })
-export class MapViewComponent implements AfterViewInit, OnChanges {
+export class MapViewComponent implements AfterViewInit, OnChanges, OnDestroy {
   @ViewChild('mapContainer') mapContainer!: ElementRef;
   @Input() currentLocation: LocationData | null = null;
 
-  private map!: L.Map;
+  private map?: L.Map;
   private marker!: L.Marker;
 
   ngAfterViewInit(): void {
@@ -32,10 +32,13 @@ export class MapViewComponent implements AfterViewInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    // Dispara sempre que o currentLocation mudar via SSE
     if (changes['currentLocation'] && this.currentLocation && this.map) {
       this.updateMarkerPosition(this.currentLocation.latitude, this.currentLocation.longitude);
     }
+  }
+
+  ngOnDestroy(): void {
+    this.map?.remove();
   }
 
  private initMap(): void {
@@ -48,7 +51,7 @@ export class MapViewComponent implements AfterViewInit, OnChanges {
       attribution: '© OpenStreetMap'
     }).addTo(this.map);
 
-    // Usa o ícone corrigido da CDN
+  
     this.marker = L.marker([lat, lng], { icon: defaultIcon }).addTo(this.map)
       .bindPopup('Entregador PulseTrack')
       .openPopup();
@@ -57,7 +60,7 @@ export class MapViewComponent implements AfterViewInit, OnChanges {
   private updateMarkerPosition(lat: number, lng: number): void {
     const newLatLng = new L.LatLng(lat, lng);
     this.marker.setLatLng(newLatLng);
-    this.map.panTo(newLatLng);
+    this.map?.panTo(newLatLng);
     console.log(`--> [Leaflet] Pino movido no mapa para: Lat ${lat} | Lng ${lng}`);
   }
 }

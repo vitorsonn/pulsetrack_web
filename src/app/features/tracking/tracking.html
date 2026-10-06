@@ -24,7 +24,10 @@
 
     <!-- Visualização do Mapa -->
     <main>
-      <app-map-view [currentLocation]="currentLocation"></app-map-view>
+      <app-map-view *ngIf="currentLocation" [currentLocation]="currentLocation"></app-map-view>
+      <div *ngIf="!currentLocation" class="flex h-[450px] items-center justify-center rounded-2xl border border-slate-700 bg-slate-800 text-sm text-slate-400">
+        Carregando localização do pedido...
+      </div>
     </main>
 
     <!-- Dados da Coordenada Atual -->
