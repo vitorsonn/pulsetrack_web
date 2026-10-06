@@ -5,6 +5,7 @@ import { TrackingService } from '../../core/services/tracking';
 import { LocationData } from '../../core/models/location-data';
 import { MapViewComponent } from './components/map-view/map-view';
 import { CommonModule } from '@angular/common';
+import { Order } from '../../core/models/order';
 
 
 @Component({
@@ -17,6 +18,7 @@ export class TrackingComponent implements OnInit, OnDestroy {
   currentLocation: LocationData | null = null;
   isConnected = false;
   orderId!: number;
+  orderDetails: Order | null = null;
 
   private streamSub?: Subscription;
   private initialLocationSub?: Subscription;
@@ -29,25 +31,28 @@ export class TrackingComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe((params) => {
-      const idParam = params.get('id');
-      this.orderId = idParam ? Number(idParam) : 1;
+  this.route.paramMap.subscribe((params) => {
+    const idParam = params.get('id');
+    this.orderId = idParam ? Number(idParam) : 1;
 
-      console.log('--> [Component] Carregando rastreamento do pedido:', this.orderId);
+    console.log('--> [Component] Carregando rastreamento do pedido:', this.orderId);
 
-      this.streamSub?.unsubscribe();
-      this.initialLocationSub?.unsubscribe();
+    this.streamSub?.unsubscribe();
+    this.initialLocationSub?.unsubscribe();
 
+    
+    this.currentLocation = null;
+    this.orderDetails = null; 
+    this.isConnected = false;
+    this.latestLocationTimestamp = undefined;
+    
+    this.changeDetectorRef.markForCheck();
 
-      this.currentLocation = null;
-      this.isConnected = false;
-      this.latestLocationTimestamp = undefined;
-      this.changeDetectorRef.markForCheck();
-
-      this.loadInitialLocation(this.orderId);
-      this.connectToRealtimeStream(this.orderId);
-    });
-  }
+    this.loadOrderDetails();
+    this.loadInitialLocation(this.orderId);
+    this.connectToRealtimeStream(this.orderId);
+  });
+}
 
   ngOnDestroy(): void {
     console.log('--> [Component] Limpando inscrições ao destruir componente');
@@ -68,6 +73,13 @@ export class TrackingComponent implements OnInit, OnDestroy {
         console.error('--> [Component] Erro na stream do SSE:', err);
         this.isConnected = false;
       }
+    });
+  }
+
+  private loadOrderDetails(): void {
+    this.trackingService.getOrderDetails(this.orderId).subscribe({
+      next: (order) => this.orderDetails = order,
+      error: (err) => console.error('--> [Component] Erro ao carregar pedido:', err)
     });
   }
 

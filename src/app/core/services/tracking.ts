@@ -2,6 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { LocationData } from '../models/location-data';
 import { Observable } from 'rxjs';
+import { Order } from '../models/order';
 
 
 @Injectable({
@@ -48,6 +49,11 @@ export class TrackingService {
       eventSource.close();
     };
   });
+}
+
+getOrderDetails(orderId: number): Observable<Order> {
+return this.http.get<Order>(`http://localhost:8080/orders/${orderId}`);
+
 }
 
 

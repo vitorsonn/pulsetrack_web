@@ -1,41 +1,45 @@
-<div class="min-h-screen bg-slate-900 text-slate-100 p-4 md:p-8">
-  <div class="max-w-4xl mx-auto space-y-6">
-
-    <!-- Header com indicador de conexão SSE -->
-    <header class="flex items-center justify-between bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+<div class="max-w-4xl mx-auto p-4 space-y-4">
+  <!-- Cartão de Detalhes do Pedido -->
+  <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 text-white shadow-xl">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-700 pb-4">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight">Acompanhar Pedido #{{ orderId }}</h1>
+        <h1 class="text-2xl font-bold tracking-tight">
+          Acompanhar Pedido #{{ orderId }}
+        </h1>
         <p class="text-slate-400 text-sm mt-1">
           Rastreamento de entrega em tempo real
         </p>
       </div>
 
-      <!-- Badge Pulsante para Status da Conexão -->
-      <div class="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-700 text-xs font-medium">
-        <span class="relative flex h-2.5 w-2.5">
-          <span *ngIf="isConnected" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span class="relative inline-flex rounded-full h-2.5 w-2.5" [ngClass]="isConnected ? 'bg-emerald-500' : 'bg-amber-500'"></span>
-        </span>
-        <span [class.text-emerald-400]="isConnected" [class.text-amber-400]="!isConnected">
-          {{ isConnected ? 'Ao Vivo (SSE)' : 'Aguardando Pulsos...' }}
+      <!-- Badge do Status SSE -->
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+           [ngClass]="isConnected ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'">
+        <span class="w-2 h-2 rounded-full animate-pulse"
+              [ngClass]="isConnected ? 'bg-emerald-400' : 'bg-amber-400'"></span>
+        {{ isConnected ? 'Ao Vivo (SSE)' : 'Aguardando Pulsos...' }}
+      </div>
+    </div>
+
+    <!-- Informações do Cliente e Endereço -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 text-sm">
+      <div>
+        <span class="text-slate-400 block text-xs uppercase tracking-wider font-medium">Cliente</span>
+        <span class="font-semibold text-slate-200 mt-0.5 block">
+          {{ orderDetails?.customerName || 'Carregando dados...' }}
         </span>
       </div>
-    </header>
 
-    <!-- Visualização do Mapa -->
-    <main>
-      <app-map-view *ngIf="currentLocation" [currentLocation]="currentLocation"></app-map-view>
-      <div *ngIf="!currentLocation" class="flex h-[450px] items-center justify-center rounded-2xl border border-slate-700 bg-slate-800 text-sm text-slate-400">
-        Carregando localização do pedido...
+      <div>
+        <span class="text-slate-400 block text-xs uppercase tracking-wider font-medium">Endereço de Entrega</span>
+        <span class="font-semibold text-slate-200 mt-0.5 block">
+          {{ orderDetails?.deliveryAddress || 'Carregando endereço...' }}
+        </span>
       </div>
-    </main>
+    </div>
+  </div>
 
-    <!-- Dados da Coordenada Atual -->
-    <footer *ngIf="currentLocation" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-slate-400 bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
-      <div><strong class="text-slate-200">Latitude:</strong> {{ currentLocation.latitude }}</div>
-      <div><strong class="text-slate-200">Longitude:</strong> {{ currentLocation.longitude }}</div>
-      <div><strong class="text-slate-200">Última Atualização:</strong> {{ currentLocation.timestamp | date:'HH:mm:ss' }}</div>
-    </footer>
-
+  <!-- Componente do Mapa -->
+  <div class="overflow-hidden rounded-2xl shadow-xl">
+    <app-map-view [currentLocation]="currentLocation"></app-map-view>
   </div>
 </div>
