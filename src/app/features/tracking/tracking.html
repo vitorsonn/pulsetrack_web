@@ -1,6 +1,20 @@
 <div class="max-w-4xl mx-auto p-4 space-y-4">
-  <!-- Cartão de Detalhes do Pedido -->
-  <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 text-white shadow-xl">
+
+  <!-- Estado: Pedido Não Encontrado -->
+  <div *ngIf="orderNotFound" class="bg-red-500/10 border border-red-500/20 text-red-400 p-6 rounded-2xl text-center">
+    <h2 class="text-xl font-bold">Pedido #{{ orderId }} não encontrado</h2>
+    <p class="text-sm mt-1 text-slate-400">Verifique o código informado na URL e tente novamente.</p>
+  </div>
+
+  <!-- Estado: Pedido Encontrado -->
+  <div *ngIf="!orderNotFound" class="bg-slate-800 border border-slate-700 rounded-2xl p-6 text-white shadow-xl">
+    
+    <!-- Banner de Sucesso quando Entregue -->
+    <div *ngIf="isCompleted" class="mb-4 p-3 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-xl text-sm font-semibold flex items-center justify-between">
+      <span>🎉 Pedido entregue no destino com sucesso!</span>
+      <span class="text-xs bg-emerald-500/30 px-2 py-1 rounded">FINALIZADO</span>
+    </div>
+
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-700 pb-4">
       <div>
         <h1 class="text-2xl font-bold tracking-tight">
@@ -11,16 +25,25 @@
         </p>
       </div>
 
-      <!-- Badge do Status SSE -->
-      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
-           [ngClass]="isConnected ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'">
-        <span class="w-2 h-2 rounded-full animate-pulse"
-              [ngClass]="isConnected ? 'bg-emerald-400' : 'bg-amber-400'"></span>
-        {{ isConnected ? 'Ao Vivo (SSE)' : 'Aguardando Pulsos...' }}
+      <div class="flex items-center gap-3">
+        <!-- Botão para Simular Conclusão (caso ainda esteja em trânsito) -->
+        <button *ngIf="!isCompleted" 
+                (click)="finishDelivery()"
+                class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-colors">
+          Concluir Entrega
+        </button>
+
+        <!-- Badge do Status SSE -->
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+             [ngClass]="isCompleted ? 'bg-slate-700 text-slate-300' : (isConnected ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20')">
+          <span class="w-2 h-2 rounded-full animate-pulse"
+                [ngClass]="isCompleted ? 'bg-slate-400' : (isConnected ? 'bg-emerald-400' : 'bg-amber-400')"></span>
+          {{ isCompleted ? 'Encerrado' : (isConnected ? 'Ao Vivo (SSE)' : 'Aguardando Pulsos...') }}
+        </div>
       </div>
     </div>
 
-    <!-- Informações do Cliente e Endereço -->
+    <!-- Informações do Cliente -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 text-sm">
       <div>
         <span class="text-slate-400 block text-xs uppercase tracking-wider font-medium">Cliente</span>
@@ -39,7 +62,7 @@
   </div>
 
   <!-- Componente do Mapa -->
-  <div class="overflow-hidden rounded-2xl shadow-xl">
+  <div *ngIf="!orderNotFound" class="overflow-hidden rounded-2xl shadow-xl">
     <app-map-view [currentLocation]="currentLocation"></app-map-view>
   </div>
 </div>

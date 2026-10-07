@@ -17,7 +17,9 @@ import { Order } from '../../core/models/order';
 export class TrackingComponent implements OnInit, OnDestroy {
   currentLocation: LocationData | null = null;
   isConnected = false;
+  isCompleted = false;
   orderId!: number;
+  orderNotFound = false;
   orderDetails: Order | null = null;
 
   private streamSub?: Subscription;
@@ -78,11 +80,38 @@ export class TrackingComponent implements OnInit, OnDestroy {
 
   private loadOrderDetails(): void {
     this.trackingService.getOrderDetails(this.orderId).subscribe({
-      next: (order) => this.orderDetails = order,
-      error: (err) => console.error('--> [Component] Erro ao carregar pedido:', err)
+      next: (order) => {
+        this.orderDetails = order;
+        
+        if (order.orderStatus === 'COMPLETED') {
+          this.isCompleted = true;
+        }
+        this.changeDetectorRef.markForCheck();
+      },
+      error: (err) => {
+        console.error('--> [Component] Erro ao carregar pedido:', err);
+        if (err.status === 404) {
+          console.error('--> [Component] Pedido não encontrado. Redirecionando para a página de erro.');
+        }
+        this.changeDetectorRef.markForCheck();
+      }
     });
   }
 
+  finishDelivery(): void {
+    this.trackingService.completeOrder(this.orderId).subscribe({
+      next: (updatedOrder) => {
+        this.orderDetails = updatedOrder;
+        this.isCompleted = true;
+        this.isConnected = false;
+        this.streamSub?.unsubscribe(); // Fecha o SSE no front
+        this.changeDetectorRef.markForCheck();
+      },
+      error: (err) => console.error('--> [Component] Erro ao concluir pedido:', err)
+    });
+  }
+
+  
   private loadInitialLocation(orderId: number): void {
     this.initialLocationSub = this.trackingService.getCurrentLocation(orderId).subscribe({
       next: (location) => {

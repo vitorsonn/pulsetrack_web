@@ -56,6 +56,10 @@ return this.http.get<Order>(`http://localhost:8080/orders/${orderId}`);
 
 }
 
+completeOrder(orderId: number): Observable<Order> {
+  return this.http.patch<Order>(`http://localhost:8080/orders/${orderId}/complete`, {});
+}
+
 
 
 }
