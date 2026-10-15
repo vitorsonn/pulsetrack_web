@@ -3,12 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DriverOrder } from '../models/driver-order';
 import { LocationData } from '../models/location-data';
+import { API_BASE_URL } from '../config/api-url';
 
 @Injectable ({
   providedIn: 'root'
 })
 export class DriverService {
-  private readonly API_URL = 'http://localhost:8080';
+  private readonly API_URL = API_BASE_URL;
 
   constructor(private http: HttpClient) {}
 

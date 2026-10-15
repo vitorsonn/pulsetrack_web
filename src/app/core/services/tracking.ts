@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { LocationData } from '../models/location-data';
 import { Observable } from 'rxjs';
 import { Order } from '../models/order';
+import { API_BASE_URL } from '../config/api-url';
 
 
 @Injectable({
@@ -10,7 +11,7 @@ import { Order } from '../models/order';
 })
 export class TrackingService {
 
-    private readonly API_URL = 'http://localhost:8080/tracking'
+    private readonly API_URL = `${API_BASE_URL}/tracking`;
 
     constructor(private http: HttpClient, private ngZone: NgZone) { }
 
@@ -52,12 +53,12 @@ export class TrackingService {
 }
 
 getOrderDetails(orderId: number): Observable<Order> {
-return this.http.get<Order>(`http://localhost:8080/orders/${orderId}`);
+return this.http.get<Order>(`${API_BASE_URL}/orders/${orderId}`);
 
 }
 
 completeOrder(orderId: number): Observable<Order> {
-  return this.http.patch<Order>(`http://localhost:8080/orders/${orderId}/complete`, {});
+  return this.http.patch<Order>(`${API_BASE_URL}/orders/${orderId}/complete`, {});
 }
 
 
