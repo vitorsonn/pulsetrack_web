@@ -1,0 +1,93 @@
+<div class="min-h-screen bg-slate-950 py-8 px-4 sm:px-6 lg:px-8 text-slate-100 font-sans">
+  <div class="max-w-2xl mx-auto space-y-6">
+    
+
+    <div class="bg-slate-900/50 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 shadow-2xl">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800/80 pb-5">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight flex items-center gap-2.5 text-white">
+            <span class="text-3xl">🛵</span> Painel do Entregador
+          </h1>
+          <p class="text-slate-400 text-sm mt-1.5">
+            Transmissão de coordenadas GPS em tempo real
+          </p>
+        </div>
+
+
+        <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide shadow-inner"
+             [ngClass]="isTransmitting ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800/80 text-slate-400 border border-slate-700/50'">
+          <span class="w-2 h-2 rounded-full"
+                [ngClass]="isTransmitting ? 'bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'bg-slate-500'"></span>
+          {{ isTransmitting ? 'Transmitindo GPS' : 'Inativo' }}
+        </div>
+      </div>
+
+
+      <div class="mt-6 space-y-2.5">
+        <label class="block text-xs uppercase tracking-wider font-semibold text-slate-400">
+          Selecionar Pedido Pendente (Status: CREATED)
+        </label>
+        
+        <div class="flex gap-2.5">
+          <select [(ngModel)]="selectedOrderId" 
+                  [disabled]="isTransmitting"
+                  class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 text-sm focus:outline-none focus:border-blue-500/80 focus:ring-1 focus:ring-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+            <option *ngFor="let order of pendingOrders" [value]="order.id" class="bg-slate-900 text-slate-200">
+              Pedido #{{ order.id }} — {{ order.customerName }} ({{ order.deliveryAddress }})
+            </option>
+          </select>
+
+          <button (click)="loadOrders()" 
+                  [disabled]="isTransmitting"
+                  title="Atualizar lista de pedidos"
+                  class="px-4 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-slate-300 rounded-xl text-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+            🔄
+          </button>
+        </div>
+
+        <p *ngIf="pendingOrders.length === 0" class="text-xs text-amber-400/90 mt-2 flex items-center gap-1.5">
+          <span>⚠️</span> Nenhum pedido pendente encontrado no banco.
+        </p>
+      </div>
+    </div>
+
+    <div class="bg-slate-900/50 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 shadow-2xl space-y-4">
+      <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-800/80 pb-3">
+        Controle de Sinal
+      </h2>
+
+      <button *ngIf="!isTransmitting"
+              (click)="startTransmission()" 
+              [disabled]="!selectedOrderId"
+              class="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-blue-600/20 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+        <span class="text-base">📍</span> Iniciar Transmissão GPS
+      </button>
+
+      <button *ngIf="isTransmitting" 
+              (click)="stopTransmission()"
+              class="w-full py-3.5 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-semibold rounded-xl text-sm transition-all active:scale-[0.99] flex items-center justify-center gap-2">
+        <span class="text-base">🛑</span> Parar Transmissão GPS
+      </button>
+    </div>
+
+    <div *ngIf="lastSentCoords" class="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-5 text-slate-300 font-mono text-xs space-y-3 shadow-xl">
+      <div class="flex justify-between items-center text-slate-500 uppercase tracking-wider text-[10px] border-b border-slate-800/60 pb-2">
+        <span class="flex items-center gap-1.5 text-slate-400 font-semibold">
+          <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span> Último Sinal Enviado
+        </span>
+        <span>{{ lastSentCoords.time }}</span>
+      </div>
+      <div class="grid grid-cols-2 gap-3 text-slate-200">
+        <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/40">
+          <span class="text-slate-400 block text-[10px] uppercase">Latitude</span>
+          <span class="text-blue-400 font-bold text-sm">{{ lastSentCoords.lat }}</span>
+        </div>
+        <div class="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/40">
+          <span class="text-slate-400 block text-[10px] uppercase">Longitude</span>
+          <span class="text-blue-400 font-bold text-sm">{{ lastSentCoords.lng }}</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
